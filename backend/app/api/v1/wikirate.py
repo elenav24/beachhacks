@@ -1,20 +1,37 @@
-from fastapi import APIRouter
-from app.integrations.wikirate import get_labor_score, get_climate_transparency_data
+from fastapi import APIRouter, HTTPException
+from app.integrations.wikirate import get_sustainability_report, get_labor_score, get_climate_score
 
 router = APIRouter()
 
 
-@router.get("/labor/{brand}")
-def labor(brand: str):
-    result = get_labor_score(brand)
-    if not result:
-        return {"error": "Brand not found in WikiRate"}
-    # result is a list of tuples: [("Metric", value), ..., ("Score", total)]
-    breakdown = [{"metric": m, "value": v} for m, v in result if m != "Score"]
-    score_entry = next((v for m, v in result if m == "Score"), None)
-    return {"score": score_entry, "breakdown": breakdown}
+@router.get("/")
+def read_root():
+    return {"status": "active", "message": "EcoScore API is running. Go to /docs to test."}
 
+@router.get("/report/{company_name}")
+def full_report(company_name: str):
+    """Returns the combined Labor, Climate, and Overall Impact score."""
+    report = get_sustainability_report(company_name)
+    if not report:
+        raise HTTPException(status_code=404, detail="Company not found on Wikirate")
+    return report
 
-@router.get("/climate/{brand}")
-def climate(brand: str):
-    return get_climate_transparency_data(brand) or {"error": "Brand not found in WikiRate"}
+@router.get("/test/labor/{company_name}")
+def labor_only(company_name: str):
+    """Isolation test for Labor Metrics."""
+    data = get_labor_score(company_name)
+    if not data:
+        raise HTTPException(status_code=404, detail="Labor data not found")
+    return {"company": company_name, "labor_breakdown": data}
+
+@router.get("/test/climate/{company_name}")
+def climate_only(company_name: str):
+    """Isolation test for Climate Metrics."""
+    data = get_climate_score(company_name)
+    if not data:
+        raise HTTPException(status_code=404, detail="Climate data not found")
+    return {"company": company_name, "climate_breakdown": data}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(router, host="0.0.0.0", port=8000)
