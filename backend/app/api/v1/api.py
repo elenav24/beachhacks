@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from .receipt import router as receipt_router
+from .receipts import router as receipt_router
 
 
 router = APIRouter()
