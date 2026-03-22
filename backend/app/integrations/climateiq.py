@@ -70,9 +70,13 @@ async def calculate_footprint(weight: str, category: str, title: str = "", origi
         print("CLIMATIQ ESTIMATE:", estimate_resp.status_code, estimate_data)
 
         co2e = estimate_data.get("co2e", 0.0)
+        ef = estimate_data.get("emission_factor", {})
 
         return {
             "emissions": co2e,
             "water": 0.0,
-            "decomposition": 100 if "plastic" in category.lower() else 1
+            "decomposition": 100 if "plastic" in category.lower() else 1,
+            "emission_factor_name": ef.get("name"),
+            "emission_factor_region": ef.get("region"),
+            "emission_lca_stage": ef.get("source_lca_activity"),
         }

@@ -24,14 +24,15 @@ async def get_product_data(amazon_url: str):
             None,
         )
 
+        climate_pledge = data.get("climate_pledge_friendly")
+
         return {
             "title": product.get("title", "Unknown Product"),
             "brand": product.get("brand", "Generic"),
             "price": product.get("buybox_winner", {}).get("price", {}).get("value", 0),
-            "weight": (
-                weight_info["value"] if weight_info else "0.5kg"
-            ),  # Default fallback
-            "category": product.get("categories", [{}])[-1].get(
-                "name", "Consumer Goods"
-            ),
+            "weight": weight_info["value"] if weight_info else "0.5kg",
+            "category": product.get("categories", [{}])[-1].get("name", "Consumer Goods"),
+            "image_url": product.get("main_image", {}).get("link"),
+            "asin": product.get("asin"),
+            "climate_pledge_friendly": climate_pledge is not None,
         }
