@@ -1,5 +1,5 @@
 import os
-from backend.app.api.v1 import api
+from app.api.v1 import api
 from wikirate4py import API
 
 WIKIRATE_API_KEY = os.getenv("WIKIRATE_API_KEY")
