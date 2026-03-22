@@ -74,17 +74,17 @@ export function BreakdownReceipt({ metrics, receipt }: BreakdownReceiptProps) {
         <div className="ml-6">
           <div className="flex justify-between">
             <span className="text-gray-400">Total Consumed:</span>
-            <span className="text-white">{metrics.water.toLocaleString()} L</span>
+            <span className="text-white">{metrics.water.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</span>
           </div>
           {receipt.water_breakdown && (
             <>
               <div className="flex justify-between mt-1">
                 <span className="text-gray-500 text-xs">Raw Materials:</span>
-                <span className="text-gray-300 text-xs">{receipt.water_breakdown.raw_materials_water.toLocaleString()} L</span>
+                <span className="text-gray-300 text-xs">{receipt.water_breakdown.raw_materials_water.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500 text-xs">Manufacturing:</span>
-                <span className="text-gray-300 text-xs">{receipt.water_breakdown.manufacturing_process_water.toLocaleString()} L</span>
+                <span className="text-gray-300 text-xs">{receipt.water_breakdown.manufacturing_process_water.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</span>
               </div>
             </>
           )}

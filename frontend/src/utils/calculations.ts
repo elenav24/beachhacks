@@ -111,7 +111,7 @@ export function mapReceiptToMetrics(receipt: EnvironmentalReceipt): Environmenta
 
   return {
     co2: Math.round(co2 * 10) / 10,
-    water: Math.round(water),
+    water: parseFloat(water.toFixed(2)),
     humanCost: Math.max(0, Math.min(100, humanCost)),
     degradationTime: Math.round(degradationTime * 10) / 10,
     grade,

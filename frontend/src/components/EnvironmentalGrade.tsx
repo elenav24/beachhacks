@@ -65,7 +65,7 @@ export function EnvironmentalGrade({ metrics }: EnvironmentalGradeProps) {
         </div>
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-cyan-300 text-xs mb-1">Water Usage</p>
-          <p className="text-white text-lg">{metrics.water.toLocaleString()} L</p>
+          <p className="text-white text-lg">{metrics.water.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</p>
         </div>
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-purple-300 text-xs mb-1">Human Cost</p>
