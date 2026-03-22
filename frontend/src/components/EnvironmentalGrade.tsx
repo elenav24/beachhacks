@@ -7,20 +7,20 @@ interface EnvironmentalGradeProps {
 
 export function EnvironmentalGrade({ metrics }: EnvironmentalGradeProps) {
   const getGradeColor = (grade: string) => {
-    if (grade === 'A+' || grade === 'A') return 'text-green-400 border-green-400';
-    if (grade === 'B') return 'text-emerald-400 border-emerald-400';
-    if (grade === 'C') return 'text-yellow-400 border-yellow-400';
-    if (grade === 'D') return 'text-orange-400 border-orange-400';
+    if (grade === 'A+' || grade === 'A' || grade === 'A-') return 'text-green-400 border-green-400';
+    if (grade === 'B+' || grade === 'B' || grade === 'B-') return 'text-emerald-400 border-emerald-400';
+    if (grade === 'C+' || grade === 'C' || grade === 'C-') return 'text-yellow-400 border-yellow-400';
+    if (grade === 'D+' || grade === 'D' || grade === 'D-') return 'text-orange-400 border-orange-400';
     return 'text-red-400 border-red-400';
   };
 
   const getRecommendation = (grade: string) => {
-    if (grade === 'A+' || grade === 'A') return {
+    if (grade.startsWith('A')) return {
       icon: <CheckCircle className="w-5 h-5" />,
       title: 'Excellent Choice',
       message: 'Minimal environmental impact. Great sustainable choice.',
     };
-    if (grade === 'B') return {
+    if (grade.startsWith('B')) return {
       icon: <Leaf className="w-5 h-5" />,
       title: 'Good Choice',
       message: 'Moderate impact. Consider alternatives for better sustainability.',

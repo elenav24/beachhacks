@@ -22,7 +22,7 @@ SUPPLY_CHAIN_SCHEMA = {
                             "destination",
                         ],
                     },
-                    "location": {"type": "string"},
+                    "location": {"type": "string", "description": "Specific city and country, e.g. 'Shenzhen, China'"},
                     "mode": {
                         "type": "string",
                         "enum": ["ship", "truck", "rail", "air", "none"],
@@ -67,11 +67,16 @@ MATERIAL_WATER_INTENSITY = {
 
 
 def get_supply_chain_map(company_name, delivery_city):
-    user_input = f"Imagine the user ordered a product from '{company_name}' and it will be delivered to {delivery_city}. Map the 2026 supply chain for this order."
+    user_input = (
+        f"Imagine the user ordered a product from '{company_name}' and it will be delivered to {delivery_city}. "
+        f"Map the realistic 2026 supply chain for this order. "
+        f"For every step, 'location' MUST be a specific city and country name (e.g. 'Shenzhen, China', 'Ho Chi Minh City, Vietnam'). "
+        f"Never use ISO codes, abbreviations, or country-only names."
+    )
 
     res = co.chat(
         model="command-a-03-2025",
-        messages=[{"role": "assistant", "content": user_input}],
+        messages=[{"role": "user", "content": user_input}],
         response_format={"type": "json_object", "schema": SUPPLY_CHAIN_SCHEMA},
         temperature=0,
     )

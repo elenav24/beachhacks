@@ -68,30 +68,46 @@ async def _geocode_supply_chain(
 
 
 def _compute_grade(
-    emissions: float, water: float, ethics_score: float | None, decomposition: int
+    emissions: float, water: float, ethics_score: float | None, decomposition: int,
+    warnings: list | None = None,
 ) -> tuple[str, float]:
     """Return (letter_grade, 0-100 score). Higher score = better."""
-    # Normalize each dimension to 0-100 penalty (lower = better)
-    co2_penalty = min(100, (emissions / 50) * 100)  # 50 kg CO2 = max penalty
-    water_penalty = min(100, (water / 5000) * 100)  # 5000 L = max penalty
-    ethics_penalty = 100 - (ethics_score or 50)  # invert: low ethics = high penalty
-    decomp_penalty = min(100, (decomposition / 500) * 100)  # 500 yrs = max penalty
+    co2_penalty = min(100, (emissions / 50) * 100)
+    water_penalty = min(100, (water / 5000) * 100)
+    ethics_penalty = 100 - (ethics_score or 50)
+    decomp_penalty = min(100, (decomposition / 500) * 100)
 
-    overall_penalty = (
-        co2_penalty + water_penalty + ethics_penalty + decomp_penalty
-    ) / 4
+    overall_penalty = (co2_penalty + water_penalty + ethics_penalty + decomp_penalty) / 4
     score = round(100 - overall_penalty, 1)
 
-    if overall_penalty < 20:
+    # Deduct 10 points per labor warning
+    warning_deduction = len(warnings) * 10 if warnings else 0
+    score = round(max(0, score - warning_deduction), 1)
+
+    if score >= 97:
         grade = "A+"
-    elif overall_penalty < 35:
+    elif score >= 93:
         grade = "A"
-    elif overall_penalty < 50:
+    elif score >= 90:
+        grade = "A-"
+    elif score >= 87:
+        grade = "B+"
+    elif score >= 83:
         grade = "B"
-    elif overall_penalty < 65:
+    elif score >= 80:
+        grade = "B-"
+    elif score >= 77:
+        grade = "C+"
+    elif score >= 73:
         grade = "C"
-    elif overall_penalty < 80:
+    elif score >= 70:
+        grade = "C-"
+    elif score >= 67:
+        grade = "D+"
+    elif score >= 65:
         grade = "D"
+    elif score >= 60:
+        grade = "D-"
     else:
         grade = "F"
 
@@ -129,7 +145,8 @@ async def generate_manual_analysis(
         supply_chain, weight, title, description, materials
     )
     grade, overall_score = _compute_grade(
-        emissions, water["total_water_liters"], ethics_score, decomposition
+        emissions, water["total_water_liters"], ethics_score, decomposition,
+        labor["warnings"] if labor else None,
     )
 
     # Geocode the emission factor region to get origin coordinates
@@ -208,7 +225,8 @@ async def generate_environmental_analysis(
         product["materials"],
     )
     grade, overall_score = _compute_grade(
-        emissions, water["total_water_liters"], ethics_score, decomposition
+        emissions, water["total_water_liters"], ethics_score, decomposition,
+        labor["warnings"] if labor else None,
     )
 
     # Geocode the emission factor region to get origin coordinates

@@ -126,7 +126,7 @@ export default function Results() {
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
-          className="gap-2 bg-black/40 text-white hover:bg-black/60 backdrop-blur-sm"
+          className="gap-2 bg-black/40 text-white hover:bg-emerald-900/60 hover:text-white backdrop-blur-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           {receipt.product_name}
