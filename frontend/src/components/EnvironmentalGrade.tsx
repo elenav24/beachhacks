@@ -7,87 +7,74 @@ interface EnvironmentalGradeProps {
 
 export function EnvironmentalGrade({ metrics }: EnvironmentalGradeProps) {
   const getGradeColor = (grade: string) => {
-    if (grade === 'A+' || grade === 'A') return 'text-green-600 bg-green-50 border-green-600';
-    if (grade === 'B') return 'text-emerald-600 bg-emerald-50 border-emerald-600';
-    if (grade === 'C') return 'text-yellow-600 bg-yellow-50 border-yellow-600';
-    if (grade === 'D') return 'text-orange-600 bg-orange-50 border-orange-600';
-    return 'text-red-600 bg-red-50 border-red-600';
+    if (grade === 'A+' || grade === 'A') return 'text-green-400 border-green-400';
+    if (grade === 'B') return 'text-emerald-400 border-emerald-400';
+    if (grade === 'C') return 'text-yellow-400 border-yellow-400';
+    if (grade === 'D') return 'text-orange-400 border-orange-400';
+    return 'text-red-400 border-red-400';
   };
 
   const getRecommendation = (grade: string) => {
-    if (grade === 'A+' || grade === 'A') {
-      return {
-        icon: <CheckCircle className="w-6 h-6" />,
-        title: 'Excellent Choice!',
-        message: 'This product has a minimal environmental impact. Great sustainable choice!',
-      };
-    }
-    if (grade === 'B') {
-      return {
-        icon: <Leaf className="w-6 h-6" />,
-        title: 'Good Choice',
-        message: 'This product has a moderate environmental impact. Consider alternatives for better sustainability.',
-      };
-    }
+    if (grade === 'A+' || grade === 'A') return {
+      icon: <CheckCircle className="w-5 h-5" />,
+      title: 'Excellent Choice',
+      message: 'Minimal environmental impact. Great sustainable choice.',
+    };
+    if (grade === 'B') return {
+      icon: <Leaf className="w-5 h-5" />,
+      title: 'Good Choice',
+      message: 'Moderate impact. Consider alternatives for better sustainability.',
+    };
     return {
-      icon: <AlertTriangle className="w-6 h-6" />,
+      icon: <AlertTriangle className="w-5 h-5" />,
       title: 'High Impact',
-      message: 'This product has a significant environmental impact. We recommend looking for more sustainable alternatives.',
+      message: 'Significant environmental burden. Look for more sustainable alternatives.',
     };
   };
 
-  const recommendation = getRecommendation(metrics.grade);
-  const iconColor =
-    metrics.grade === 'A+' || metrics.grade === 'A'
-      ? 'text-green-600'
-      : metrics.grade === 'B'
-      ? 'text-emerald-600'
-      : metrics.grade === 'C'
-      ? 'text-yellow-600'
-      : metrics.grade === 'D'
-      ? 'text-orange-600'
-      : 'text-red-600';
+  const rec = getRecommendation(metrics.grade);
+  const gradeColor = getGradeColor(metrics.grade);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col items-center justify-center py-12">
-        <p className="text-gray-600 mb-4">Environmental Grade</p>
-        <div className={`w-48 h-48 rounded-full border-8 flex items-center justify-center ${getGradeColor(metrics.grade)}`}>
-          <span className="text-7xl">{metrics.grade}</span>
+    <div className="space-y-6 text-white">
+      <div className="flex flex-col items-center py-6">
+        <p className="text-gray-400 text-sm mb-3">Environmental Grade</p>
+        <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center ${gradeColor}`}>
+          <span className="text-5xl">{metrics.grade}</span>
         </div>
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">Overall Score</p>
-          <p className="text-4xl text-gray-900">{metrics.gradeScore}/100</p>
+        <div className="mt-4 text-center">
+          <p className="text-gray-400 text-sm">Overall Score</p>
+          <p className="text-3xl text-white">{metrics.gradeScore}/100</p>
         </div>
       </div>
 
-      <div className={`p-6 rounded-lg border-l-4 ${getGradeColor(metrics.grade)}`}>
-        <div className="flex items-start gap-4">
-          <div className={iconColor}>{recommendation.icon}</div>
+      <div className={`p-4 rounded-lg border-l-4 bg-white/5 ${gradeColor}`}>
+        <div className="flex items-start gap-3">
+          <div className={gradeColor.split(' ')[0]}>{rec.icon}</div>
           <div>
-            <h3 className="text-xl text-gray-900 mb-2">{recommendation.title}</h3>
-            <p className="text-gray-700">{recommendation.message}</p>
+            <h3 className="text-white mb-1">{rec.title}</h3>
+            <p className="text-gray-300 text-sm">{rec.message}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-blue-600 mb-1">CO₂ Emissions</p>
-          <p className="text-2xl text-blue-900">{metrics.co2} kg</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-blue-300 text-xs mb-1">CO₂ Emissions</p>
+          <p className="text-white text-xl">{metrics.co2} kg</p>
         </div>
-        <div className="bg-cyan-50 p-4 rounded-lg">
-          <p className="text-sm text-cyan-600 mb-1">Water Usage</p>
-          <p className="text-2xl text-cyan-900">{metrics.water.toLocaleString()} L</p>
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-cyan-300 text-xs mb-1">Water Usage</p>
+          <p className="text-white text-xl">{metrics.water.toLocaleString()} L</p>
         </div>
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <p className="text-sm text-purple-600 mb-1">Human Cost</p>
-          <p className="text-2xl text-purple-900">{metrics.humanCost}/100</p>
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-purple-300 text-xs mb-1">Human Cost</p>
+          <p className="text-white text-xl">{metrics.humanCost}/100</p>
         </div>
-        <div className="bg-amber-50 p-4 rounded-lg">
-          <p className="text-sm text-amber-600 mb-1">Degradation</p>
-          <p className="text-2xl text-amber-900">
-            {metrics.degradationTime} {metrics.degradationTime === 1 ? 'yr' : 'yrs'}
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-amber-300 text-xs mb-1">Degradation</p>
+          <p className="text-white text-xl">
+            {metrics.degradationTime >= 1000 ? '1000+ yrs' : `${metrics.degradationTime} yrs`}
           </p>
         </div>
       </div>

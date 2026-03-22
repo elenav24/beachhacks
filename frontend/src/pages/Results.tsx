@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Award, Receipt, Globe } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { EnvironmentalGrade } from '../components/EnvironmentalGrade';
 import { BreakdownReceipt } from '../components/BreakdownReceipt';
 import { SupplyChainMap } from '../components/SupplyChainMap';
@@ -27,7 +26,6 @@ export default function Results() {
 
   const { data: receipt, isLoading, isError, error } = useReceipt(url);
 
-  // Resolve supply chain (async geocoding) once receipt + location are ready
   useEffect(() => {
     if (!receipt) return;
     generateSupplyChain(receipt, deliveryLocation).then(setSupplyChain);
@@ -35,10 +33,10 @@ export default function Results() {
 
   if (!url || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-gray-100">
+      <div className="h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-600">Analyzing environmental impact...</p>
+          <p className="text-gray-400">Analyzing environmental impact...</p>
         </div>
       </div>
     );
@@ -46,9 +44,9 @@ export default function Results() {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-gray-100">
+      <div className="h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center space-y-4 max-w-md">
-          <p className="text-red-600 text-lg">{(error as Error)?.message ?? 'Something went wrong'}</p>
+          <p className="text-red-400 text-lg">{(error as Error)?.message ?? 'Something went wrong'}</p>
           <Button variant="outline" onClick={() => navigate('/')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Try Again
@@ -63,58 +61,31 @@ export default function Results() {
   const metrics = mapReceiptToMetrics(receipt);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-2xl font-medium text-gray-900 truncate max-w-lg">{receipt.product_name}</h1>
-                <p className="text-sm text-gray-600">{receipt.brand} • {receipt.price != null ? `$${receipt.price.toFixed(2)}` : 'Price unavailable'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-lg">
-              <span className="text-emerald-700">Grade:</span>
-              <span className="text-2xl font-medium text-emerald-900">{metrics.grade}</span>
-            </div>
-          </div>
-        </div>
+    <div className="h-screen w-screen overflow-hidden bg-gray-950 relative">
+      {/* Fullscreen Globe */}
+      <SupplyChainMap stops={supplyChain} />
+
+      {/* Back button */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="gap-2 bg-black/40 text-white hover:bg-black/60 backdrop-blur-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {receipt.product_name}
+        </Button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Tabs defaultValue="grade" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
-            <TabsTrigger value="grade" className="gap-2">
-              <Award className="w-4 h-4" />
-              Grade
-            </TabsTrigger>
-            <TabsTrigger value="breakdown" className="gap-2">
-              <Receipt className="w-4 h-4" />
-              Breakdown
-            </TabsTrigger>
-            <TabsTrigger value="map" className="gap-2">
-              <Globe className="w-4 h-4" />
-              Supply Chain
-            </TabsTrigger>
-          </TabsList>
+      {/* Left sidebar — Environmental Grade */}
+      <aside className="absolute top-0 left-0 h-full w-80 z-10 overflow-y-auto bg-black/50 backdrop-blur-md border-r border-white/10 p-4">
+        <EnvironmentalGrade metrics={metrics} />
+      </aside>
 
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <TabsContent value="grade" className="mt-0">
-              <EnvironmentalGrade metrics={metrics} />
-            </TabsContent>
-            <TabsContent value="breakdown" className="mt-0">
-              <BreakdownReceipt metrics={metrics} receipt={receipt} />
-            </TabsContent>
-            <TabsContent value="map" className="mt-0">
-              <SupplyChainMap stops={supplyChain} />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+      {/* Right sidebar — Breakdown Receipt */}
+      <aside className="absolute top-0 right-0 h-full w-80 z-10 overflow-y-auto bg-black/50 backdrop-blur-md border-l border-white/10 p-4">
+        <BreakdownReceipt metrics={metrics} receipt={receipt} />
+      </aside>
     </div>
   );
 }
