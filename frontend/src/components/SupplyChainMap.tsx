@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState } from 'react';
 import Globe from 'react-globe.gl';
-import type { SupplyChainStop } from '../utils/calculations';
+import type { SupplyChainStop, SupplyChainArc } from '../utils/calculations';
 
 interface SupplyChainMapProps {
   stops: SupplyChainStop[];
+  arcs: SupplyChainArc[];
 }
 
-export function SupplyChainMap({ stops }: SupplyChainMapProps) {
+export function SupplyChainMap({ stops, arcs }: SupplyChainMapProps) {
   const globeEl = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -20,15 +21,6 @@ export function SupplyChainMap({ stops }: SupplyChainMapProps) {
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
-
-  const arcColors = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6'];
-  const arcs = stops.slice(0, -1).map((stop, i) => ({
-    startLat: stop.lat,
-    startLng: stop.lng,
-    endLat: stops[i + 1].lat,
-    endLng: stops[i + 1].lng,
-    arcColor: arcColors[i % arcColors.length],
-  }));
 
   const handleGlobeReady = () => {
     if (!globeEl.current) return;
@@ -62,12 +54,29 @@ export function SupplyChainMap({ stops }: SupplyChainMapProps) {
           return `<div style="background:rgba(0,0,0,0.8);padding:8px;border-radius:4px;color:white"><strong>${stop.name}</strong><br/><span style="font-size:12px">${stop.type.toUpperCase()}</span></div>`;
         }}
         arcsData={arcs}
-        arcColor={(d: any) => d.arcColor}
+        arcColor={(d: any) => (d as SupplyChainArc).arcColor}
         arcDashLength={0.4}
         arcDashGap={0.2}
         arcDashAnimateTime={2000}
-        arcStroke={1}
+        arcStroke={1.5}
         arcDashInitialGap={(_: any) => Math.random()}
+        arcLabel={(d: any) => {
+          const arc = d as SupplyChainArc;
+          return `
+            <div style="background:rgba(0,0,0,0.85);padding:10px 12px;border-radius:6px;color:white;font-size:12px;min-width:180px;border:1px solid rgba(255,255,255,0.15)">
+              <div style="font-weight:600;margin-bottom:6px;color:#a3e635">${arc.transportMode} Route</div>
+              <div style="color:#9ca3af;margin-bottom:2px">${arc.from.split(' - ')[1] ?? arc.from}</div>
+              <div style="color:#6b7280;font-size:10px;margin-bottom:6px">↓</div>
+              <div style="color:#9ca3af;margin-bottom:8px">${arc.to.split(' - ')[1] ?? arc.to}</div>
+              <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                <div><div style="color:#6b7280;font-size:10px">DISTANCE</div><div style="color:white">${arc.distanceKm.toLocaleString()} km</div></div>
+                <div><div style="color:#6b7280;font-size:10px">CO₂</div><div style="color:#f87171">${arc.co2Kg} kg</div></div>
+                <div><div style="color:#6b7280;font-size:10px">DURATION</div><div style="color:white">~${arc.durationDays}d</div></div>
+                <div><div style="color:#6b7280;font-size:10px">MODE</div><div style="color:#60a5fa">${arc.transportMode}</div></div>
+              </div>
+            </div>
+          `;
+        }}
       />
     </div>
   );

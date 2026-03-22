@@ -21,6 +21,20 @@ export interface SupplyChainStop {
   type: 'origin' | 'manufacturing' | 'distribution' | 'destination';
 }
 
+export interface SupplyChainArc {
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  arcColor: string;
+  from: string;
+  to: string;
+  transportMode: string;
+  distanceKm: number;
+  co2Kg: number;
+  durationDays: number;
+}
+
 const cityCoordinates: Record<string, { lat: number; lng: number }> = {
   'new york': { lat: 40.7128, lng: -74.006 },
   'los angeles': { lat: 34.0522, lng: -118.2437 },
@@ -157,4 +171,57 @@ export async function generateSupplyChain(
   stops.push({ name: `Your Location - ${displayName}`, lat: coords.lat, lng: coords.lng, type: 'destination' });
 
   return stops;
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// kg CO2 per tonne-km by mode
+const CO2_FACTOR: Record<string, number> = {
+  Ship: 0.010,
+  Truck: 0.096,
+  Air: 0.602,
+  Rail: 0.028,
+};
+
+function inferTransportMode(from: SupplyChainStop, to: SupplyChainStop): string {
+  const dist = haversineKm(from.lat, from.lng, to.lat, to.lng);
+  if (dist > 3000) return 'Ship';
+  if (dist > 500) return 'Truck';
+  return 'Truck';
+}
+
+export function buildArcs(stops: SupplyChainStop[]): SupplyChainArc[] {
+  const arcColors = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6'];
+  // Assume average product weight of 1 kg for CO2 estimation
+  const weightTonnes = 0.001;
+
+  return stops.slice(0, -1).map((stop, i) => {
+    const next = stops[i + 1];
+    const distanceKm = Math.round(haversineKm(stop.lat, stop.lng, next.lat, next.lng));
+    const mode = inferTransportMode(stop, next);
+    const co2Kg = Math.round(distanceKm * weightTonnes * CO2_FACTOR[mode] * 100) / 100;
+    const durationDays = mode === 'Ship' ? Math.round(distanceKm / 500) : Math.round(distanceKm / 800);
+
+    return {
+      startLat: stop.lat,
+      startLng: stop.lng,
+      endLat: next.lat,
+      endLng: next.lng,
+      arcColor: arcColors[i % arcColors.length],
+      from: stop.name,
+      to: next.name,
+      transportMode: mode,
+      distanceKm,
+      co2Kg,
+      durationDays: Math.max(1, durationDays),
+    };
+  });
 }

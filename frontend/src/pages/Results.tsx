@@ -4,9 +4,18 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { EnvironmentalGrade } from '../components/EnvironmentalGrade';
 import { BreakdownReceipt } from '../components/BreakdownReceipt';
+import { SupplyChainBreakdown } from '../components/SupplyChainBreakdown';
 import { SupplyChainMap } from '../components/SupplyChainMap';
 import { useReceipt, useManualReceipt, type ManualProduct } from '../hooks/useReceipt';
-import { mapReceiptToMetrics, generateSupplyChain, type SupplyChainStop } from '../utils/calculations';
+import {
+  mapReceiptToMetrics,
+  generateSupplyChain,
+  buildArcs,
+  type SupplyChainStop,
+  type SupplyChainArc,
+} from '../utils/calculations';
+
+type RightTab = 'receipt' | 'supply';
 
 export default function Results() {
   const navigate = useNavigate();
@@ -14,6 +23,8 @@ export default function Results() {
   const [manualProduct, setManualProduct] = useState<ManualProduct | null>(null);
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [supplyChain, setSupplyChain] = useState<SupplyChainStop[]>([]);
+  const [arcs, setArcs] = useState<SupplyChainArc[]>([]);
+  const [rightTab, setRightTab] = useState<RightTab>('receipt');
 
   useEffect(() => {
     const storedUrl = sessionStorage.getItem('receiptUrl');
@@ -40,7 +51,10 @@ export default function Results() {
 
   useEffect(() => {
     if (!receipt) return;
-    generateSupplyChain(receipt, deliveryLocation).then(setSupplyChain);
+    generateSupplyChain(receipt, deliveryLocation).then(stops => {
+      setSupplyChain(stops);
+      setArcs(buildArcs(stops));
+    });
   }, [receipt, deliveryLocation]);
 
   if ((!url && !manualProduct) || isLoading) {
@@ -75,7 +89,7 @@ export default function Results() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-gray-950 relative">
       {/* Fullscreen Globe */}
-      <SupplyChainMap stops={supplyChain} />
+      <SupplyChainMap stops={supplyChain} arcs={arcs} />
 
       {/* Back button */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
@@ -94,9 +108,40 @@ export default function Results() {
         <EnvironmentalGrade metrics={metrics} />
       </aside>
 
-      {/* Right card — Breakdown Receipt */}
-      <aside className="absolute right-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 overflow-y-auto bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl p-5 shadow-2xl">
-        <BreakdownReceipt metrics={metrics} receipt={receipt} />
+      {/* Right card — tabbed */}
+      <aside className="absolute right-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 flex flex-col bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Tab bar */}
+        <div className="flex border-b border-white/10 shrink-0">
+          <button
+            onClick={() => setRightTab('receipt')}
+            className={`flex-1 py-2.5 text-xs tracking-wider font-mono transition-colors ${
+              rightTab === 'receipt'
+                ? 'text-white border-b-2 border-emerald-400 bg-white/5'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            RECEIPT
+          </button>
+          <button
+            onClick={() => setRightTab('supply')}
+            className={`flex-1 py-2.5 text-xs tracking-wider font-mono transition-colors ${
+              rightTab === 'supply'
+                ? 'text-white border-b-2 border-blue-400 bg-white/5'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            SUPPLY CHAIN
+          </button>
+        </div>
+
+        {/* Tab content */}
+        <div className="overflow-y-auto p-5">
+          {rightTab === 'receipt' ? (
+            <BreakdownReceipt metrics={metrics} receipt={receipt} />
+          ) : (
+            <SupplyChainBreakdown stops={supplyChain} arcs={arcs} />
+          )}
+        </div>
       </aside>
     </div>
   );
