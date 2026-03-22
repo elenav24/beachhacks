@@ -12,9 +12,11 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
     # ai_research = await cohere_ai.research_supply_chain(product["brand"], product["title"])
     
     # 4. Math: Send weight + material + AI-found location to Climatiq
+    print("PRODUCT CATEGORY:", product["category"], "WEIGHT:", product["weight"])
     impact = await climateiq.calculate_footprint(
         weight=product["weight"],
         category=product["category"],
+        title=product["title"],
         # origin=ai_research.predicted_origin
     )
     

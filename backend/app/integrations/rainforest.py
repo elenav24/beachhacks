@@ -31,7 +31,7 @@ async def get_product_data(amazon_url: str):
             "weight": (
                 weight_info["value"] if weight_info else "0.5kg"
             ),  # Default fallback
-            "category": product.get("categories", [{}])[0].get(
+            "category": product.get("categories", [{}])[-1].get(
                 "name", "Consumer Goods"
             ),
         }
