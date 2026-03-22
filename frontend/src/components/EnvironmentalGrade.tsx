@@ -36,10 +36,10 @@ export function EnvironmentalGrade({ metrics }: EnvironmentalGradeProps) {
   const gradeColor = getGradeColor(metrics.grade);
 
   return (
-    <div className="space-y-6 text-white">
-      <div className="flex flex-col items-center py-6">
+    <div className="space-y-5 text-gray-100">
+      <div className="flex flex-col items-center py-4">
         <p className="text-gray-400 text-sm mb-3">Environmental Grade</p>
-        <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center ${gradeColor}`}>
+        <div className={`w-28 h-28 rounded-full border-4 flex items-center justify-center ${gradeColor}`}>
           <span className="text-5xl">{metrics.grade}</span>
         </div>
         <div className="mt-4 text-center">
@@ -48,32 +48,32 @@ export function EnvironmentalGrade({ metrics }: EnvironmentalGradeProps) {
         </div>
       </div>
 
-      <div className={`p-4 rounded-lg border-l-4 bg-white/5 ${gradeColor}`}>
+      <div className={`p-3 rounded-lg border-l-4 bg-white/5 ${gradeColor}`}>
         <div className="flex items-start gap-3">
           <div className={gradeColor.split(' ')[0]}>{rec.icon}</div>
           <div>
-            <h3 className="text-white mb-1">{rec.title}</h3>
-            <p className="text-gray-300 text-sm">{rec.message}</p>
+            <h3 className="text-white text-sm font-medium mb-0.5">{rec.title}</h3>
+            <p className="text-gray-300 text-xs">{rec.message}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-blue-300 text-xs mb-1">CO₂ Emissions</p>
-          <p className="text-white text-xl">{metrics.co2} kg</p>
+          <p className="text-white text-lg">{metrics.co2} kg</p>
         </div>
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-cyan-300 text-xs mb-1">Water Usage</p>
-          <p className="text-white text-xl">{metrics.water.toLocaleString()} L</p>
+          <p className="text-white text-lg">{metrics.water.toLocaleString()} L</p>
         </div>
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-purple-300 text-xs mb-1">Human Cost</p>
-          <p className="text-white text-xl">{metrics.humanCost}/100</p>
+          <p className="text-white text-lg">{metrics.humanCost}/100</p>
         </div>
         <div className="bg-white/10 p-3 rounded-lg">
           <p className="text-amber-300 text-xs mb-1">Degradation</p>
-          <p className="text-white text-xl">
+          <p className="text-white text-lg">
             {metrics.degradationTime >= 1000 ? '1000+ yrs' : `${metrics.degradationTime} yrs`}
           </p>
         </div>

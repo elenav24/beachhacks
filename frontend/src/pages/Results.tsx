@@ -77,13 +77,13 @@ export default function Results() {
         </Button>
       </div>
 
-      {/* Left sidebar — Environmental Grade */}
-      <aside className="absolute top-0 left-0 h-full w-80 z-10 overflow-y-auto bg-black/50 backdrop-blur-md border-r border-white/10 p-4">
+      {/* Left card — Environmental Grade */}
+      <aside className="absolute left-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 overflow-y-auto bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl p-5 shadow-2xl">
         <EnvironmentalGrade metrics={metrics} />
       </aside>
 
-      {/* Right sidebar — Breakdown Receipt */}
-      <aside className="absolute top-0 right-0 h-full w-80 z-10 overflow-y-auto bg-black/50 backdrop-blur-md border-l border-white/10 p-4">
+      {/* Right card — Breakdown Receipt */}
+      <aside className="absolute right-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 overflow-y-auto bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl p-5 shadow-2xl">
         <BreakdownReceipt metrics={metrics} receipt={receipt} />
       </aside>
     </div>
