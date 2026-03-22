@@ -51,7 +51,7 @@ export function SupplyChainBreakdown({ stops, arcs }: SupplyChainBreakdownProps)
                         <div key={i} className="flex items-center">
                             <div className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg border ${stopColor[stop.type]} bg-white/5`}>
                                 <MapPin className="w-3 h-3 shrink-0" />
-                                <div className="text-white text-xs leading-tight text-center max-w-20 truncate">{stop.name}</div>
+                                <div className="text-white text-xs leading-tight text-center max-w-28">{stop.name}</div>
                                 <div className="text-gray-500 text-xs uppercase">{stop.type}</div>
                             </div>
 

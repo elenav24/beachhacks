@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from app.integrations import rainforest, climateiq, wikirate, cohere_ai
 from app.integrations.geocoding import geocode_location
-from app.models.receipt import EnvironmentalReceipt
+from app.models.receipt import EnvironmentalReceipt, SupplyChainStop
 
 _executor = ThreadPoolExecutor()
 
@@ -15,6 +15,56 @@ async def _run_sync(fn, *args):
     except Exception as e:
         print(f"WIKIRATE ERROR ({fn.__name__}):", e)
         return None
+
+
+_STAGE_TYPE = {
+    "origin": "origin",
+    "manufacturing": "manufacturing",
+    "distribution": "distribution",
+    "destination": "destination",
+}
+
+
+async def _geocode_supply_chain(
+    supply_chain_data: dict, delivery_city: str
+) -> list[SupplyChainStop]:
+    """Geocode all stops in the Cohere supply chain concurrently."""
+    path = supply_chain_data.get("product_path", [])
+
+    # Geocode all locations + delivery city in parallel
+    locations = [step.get("location", "") for step in path]
+    all_queries = locations + ([delivery_city] if delivery_city else [])
+    coords_list = await asyncio.gather(*[_run_sync(geocode_location, q) for q in all_queries])
+
+    stops: list[SupplyChainStop] = []
+    for step, coords in zip(path, coords_list):
+        if not coords:
+            print(f"SUPPLY CHAIN: skipping '{step.get('location')}' — no coords")
+            continue
+        stops.append(
+            SupplyChainStop(
+                name=step.get("location", ""),
+                lat=coords[0],
+                lng=coords[1],
+                type=_STAGE_TYPE.get(step.get("stage", ""), "distribution"),
+            )
+        )
+
+    # Append delivery city as destination if not already present
+    if delivery_city:
+        dest_coords = coords_list[len(path)]  # last item in parallel results
+        if dest_coords and (not stops or stops[-1].type != "destination"):
+            stops.append(
+                SupplyChainStop(
+                    name=delivery_city,
+                    lat=dest_coords[0],
+                    lng=dest_coords[1],
+                    type="destination",
+                )
+            )
+
+    print(f"SUPPLY CHAIN STOPS: {[(s.name, s.type) for s in stops]}")
+    return stops
 
 
 def _compute_grade(
@@ -73,7 +123,7 @@ async def generate_manual_analysis(
     ethics_score = labor["scores"][0].get("Labor Ethics") if labor else None
 
     emissions = impact["emissions"]
-    decomposition = cohere_ai.estimate_degredation_time(title, description, materials)
+    decomposition = cohere_ai.estimate_degradation_time(title, description, materials)
     supply_chain = cohere_ai.get_supply_chain_map(brand, delivery_city)
     water = cohere_ai.estimate_water_usage(
         supply_chain, weight, title, description, materials
@@ -88,6 +138,9 @@ async def generate_manual_analysis(
     origin_lat = origin_coords[0] if origin_coords else None
     origin_lng = origin_coords[1] if origin_coords else None
 
+    # Geocode all supply chain stops
+    supply_chain_stops = await _geocode_supply_chain(supply_chain, delivery_city)
+
     return EnvironmentalReceipt(
         product_name=title,
         brand=brand,
@@ -100,6 +153,7 @@ async def generate_manual_analysis(
         decomposition_time_years=decomposition,
         origin_lat=origin_lat,
         origin_lng=origin_lng,
+        supply_chain=supply_chain_stops if supply_chain_stops else None,
         ethics_score=ethics_score,
         warnings=labor["warnings"] if labor else None,
         water=water["total_water_liters"],
@@ -163,6 +217,9 @@ async def generate_environmental_analysis(
     origin_lat = origin_coords[0] if origin_coords else None
     origin_lng = origin_coords[1] if origin_coords else None
 
+    # Geocode all supply chain stops
+    supply_chain_stops = await _geocode_supply_chain(supply_chain, delivery_city)
+
     return EnvironmentalReceipt(
         product_name=product["title"],
         brand=product["brand"],
@@ -177,6 +234,7 @@ async def generate_environmental_analysis(
         decomposition_time_years=decomposition,
         origin_lat=origin_lat,
         origin_lng=origin_lng,
+        supply_chain=supply_chain_stops if supply_chain_stops else None,
         ethics_score=ethics_score,
         warnings=labor["warnings"] if labor else None,
         water=water["total_water_liters"],

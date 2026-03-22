@@ -120,13 +120,50 @@ export function mapReceiptToMetrics(receipt: EnvironmentalReceipt): Environmenta
   };
 }
 
+export async function resolveDeliveryStop(deliveryLocation?: string): Promise<SupplyChainStop> {
+  const raw = (deliveryLocation ?? '').trim();
+  const displayName = raw
+    ? raw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : 'New York';
+
+  let coords = raw ? lookupLocal(raw) : null;
+  if (!coords && raw) coords = await geocodeCity(raw);
+  if (!coords) coords = cityCoordinates['new york'];
+
+  return { name: `Your Location - ${displayName}`, lat: coords.lat, lng: coords.lng, type: 'destination' };
+}
+
+// Kept for backwards compatibility — prefer using receipt.supply_chain directly
 export async function generateSupplyChain(
   receipt: EnvironmentalReceipt,
   deliveryLocation?: string
 ): Promise<SupplyChainStop[]> {
+  // If the backend already geocoded the full supply chain, use it directly
+  if (receipt.supply_chain && receipt.supply_chain.length >= 2) {
+    // Ensure the destination reflects the user's delivery location if provided
+    const stops: SupplyChainStop[] = receipt.supply_chain.map(s => ({ ...s }));
+    const raw = (deliveryLocation ?? '').trim();
+    if (raw) {
+      const displayName = raw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      let coords: { lat: number; lng: number } | null = lookupLocal(raw);
+      if (!coords) coords = await geocodeCity(raw);
+      if (coords) {
+        const lastStop = stops[stops.length - 1];
+        if (lastStop.type === 'destination') {
+          lastStop.name = `Your Location - ${displayName}`;
+          lastStop.lat = coords.lat;
+          lastStop.lng = coords.lng;
+        } else {
+          stops.push({ name: `Your Location - ${displayName}`, lat: coords.lat, lng: coords.lng, type: 'destination' });
+        }
+      }
+    }
+    return stops;
+  }
+
+  // Fallback: build stops from heuristics + geocoded origin
   const stops: SupplyChainStop[] = [];
   const name = (receipt.product_name + ' ' + receipt.brand).toLowerCase();
-
   const isElectronics =
     name.includes('phone') || name.includes('laptop') ||
     name.includes('electronic') || name.includes('computer');
@@ -134,7 +171,6 @@ export async function generateSupplyChain(
     name.includes('shirt') || name.includes('cotton') ||
     name.includes('fabric') || name.includes('clothing');
 
-  // Use geocoded origin from backend if available, otherwise fall back to category heuristics
   if (receipt.origin_lat != null && receipt.origin_lng != null) {
     const regionLabel = receipt.emission_factor_region ?? 'Unknown';
     stops.push({ name: `Raw Materials - ${regionLabel}`, lat: receipt.origin_lat, lng: receipt.origin_lng, type: 'origin' });
@@ -159,21 +195,11 @@ export async function generateSupplyChain(
     ? raw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     : 'New York';
 
-  // 1. Try local lookup first (instant)
   let coords = raw ? lookupLocal(raw) : null;
-
-  // 2. Fall back to geocoding API for any city not in our local map
-  if (!coords && raw) {
-    coords = await geocodeCity(raw);
-  }
-
-  // 3. Last resort: New York
-  if (!coords) {
-    coords = cityCoordinates['new york'];
-  }
+  if (!coords && raw) coords = await geocodeCity(raw);
+  if (!coords) coords = cityCoordinates['new york'];
 
   stops.push({ name: `Your Location - ${displayName}`, lat: coords.lat, lng: coords.lng, type: 'destination' });
-
   return stops;
 }
 

@@ -24,14 +24,15 @@ async def get_product_data(amazon_url: str):
 
         product = data.get("product", {})
 
-        # We need Weight and Category for Climatiq
-        # Note: Rainforest often puts weight in 'specifications'
+        specs = product.get("specifications", [])
+
         weight_info = next(
-            (
-                spec
-                for spec in product.get("specifications", [])
-                if "weight" in spec["name"].lower()
-            ),
+            (spec for spec in specs if "weight" in spec.get("name", "").lower()),
+            None,
+        )
+
+        material_info = next(
+            (spec for spec in specs if "material" in spec.get("name", "").lower()),
             None,
         )
 
@@ -48,7 +49,7 @@ async def get_product_data(amazon_url: str):
             "asin": product.get("asin"),
             "climate_pledge_friendly": climate_pledge is not None,
             "description": product.get("feature_bullets_flat") or "",
-            "materials": product.get("material") or product.get("specifications", [{}]).get("Material Type") or "",
+            "materials": product.get("material") or (material_info["value"] if material_info else "") or "",
         }
 
         if asin:

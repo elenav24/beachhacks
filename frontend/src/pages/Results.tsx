@@ -8,8 +8,8 @@ import { SupplyChainMap } from '../components/SupplyChainMap';
 import { useReceipt, useManualReceipt, type ManualProduct } from '../hooks/useReceipt';
 import {
   mapReceiptToMetrics,
-  generateSupplyChain,
   buildArcs,
+  resolveDeliveryStop,
   type SupplyChainStop,
   type SupplyChainArc,
 } from '../utils/calculations';
@@ -21,6 +21,7 @@ export default function Results() {
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [supplyChain, setSupplyChain] = useState<SupplyChainStop[]>([]);
   const [arcs, setArcs] = useState<SupplyChainArc[]>([]);
+
   useEffect(() => {
     const storedUrl = sessionStorage.getItem('receiptUrl');
     const storedManual = sessionStorage.getItem('manualProduct');
@@ -46,10 +47,42 @@ export default function Results() {
 
   useEffect(() => {
     if (!receipt) return;
-    generateSupplyChain(receipt, deliveryLocation).then(stops => {
-      setSupplyChain(stops);
-      setArcs(buildArcs(stops));
-    });
+
+    const backendStops: SupplyChainStop[] = (receipt.supply_chain ?? []).map(s => ({
+      name: s.name,
+      lat: s.lat,
+      lng: s.lng,
+      type: s.type as SupplyChainStop['type'],
+    }));
+
+    if (backendStops.length >= 2) {
+      const raw = deliveryLocation.trim();
+      if (raw) {
+        // User specified a delivery location — override the destination stop
+        resolveDeliveryStop(raw).then(destStop => {
+          const stops = backendStops.filter(s => s.type !== 'destination');
+          stops.push(destStop);
+          setSupplyChain(stops);
+          setArcs(buildArcs(stops));
+        });
+      } else {
+        // Use backend stops exactly as returned — destination already set
+        setSupplyChain(backendStops);
+        setArcs(buildArcs(backendStops));
+      }
+    } else {
+      // Fallback: no backend stops, build from receipt metadata
+      resolveDeliveryStop(deliveryLocation).then(destStop => {
+        const fallback: SupplyChainStop[] = [];
+        if (receipt.origin_lat != null && receipt.origin_lng != null) {
+          fallback.push({ name: receipt.emission_factor_region ?? 'Origin', lat: receipt.origin_lat, lng: receipt.origin_lng, type: 'origin' });
+        }
+        fallback.push({ name: 'Distribution - Los Angeles', lat: 34.0522, lng: -118.2437, type: 'distribution' });
+        fallback.push(destStop);
+        setSupplyChain(fallback);
+        setArcs(buildArcs(fallback));
+      });
+    }
   }, [receipt, deliveryLocation]);
 
   if ((!url && !manualProduct) || isLoading) {

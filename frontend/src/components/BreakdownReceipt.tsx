@@ -1,4 +1,4 @@
-import { Factory, Truck, Package, Droplet, Leaf, Users, Timer } from 'lucide-react';
+import { Factory, Truck, Package, Droplet, Leaf, Users, Timer, AlertTriangle } from 'lucide-react';
 import type { EnvironmentalMetrics } from '../utils/calculations';
 import type { EnvironmentalReceipt } from '../api/types';
 
@@ -76,6 +76,18 @@ export function BreakdownReceipt({ metrics, receipt }: BreakdownReceiptProps) {
             <span className="text-gray-400">Total Consumed:</span>
             <span className="text-white">{metrics.water.toLocaleString()} L</span>
           </div>
+          {receipt.water_breakdown && (
+            <>
+              <div className="flex justify-between mt-1">
+                <span className="text-gray-500 text-xs">Raw Materials:</span>
+                <span className="text-gray-300 text-xs">{receipt.water_breakdown.raw_materials_water.toLocaleString()} L</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 text-xs">Manufacturing:</span>
+                <span className="text-gray-300 text-xs">{receipt.water_breakdown.manufacturing_process_water.toLocaleString()} L</span>
+              </div>
+            </>
+          )}
           <p className="text-gray-500 text-xs mt-1">≈ {Math.round(metrics.water / 8)} days of drinking water</p>
         </div>
       </div>
@@ -109,6 +121,20 @@ export function BreakdownReceipt({ metrics, receipt }: BreakdownReceiptProps) {
           </span>
         </div>
       </div>
+
+      {receipt.warnings && receipt.warnings.length > 0 && (
+        <div className="border-t border-dashed border-white/10 pt-3 space-y-2">
+          <div className="flex items-center gap-2 text-red-400">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="tracking-wider text-xs">LABOR WARNINGS</span>
+          </div>
+          <ul className="ml-6 space-y-1">
+            {receipt.warnings.map((w, i) => (
+              <li key={i} className="text-gray-400 text-xs">• {w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="border-t border-white/10 pt-3 bg-white/5 -mx-5 px-5 pb-4 rounded-b-2xl">
         <div className="flex justify-between items-center">
