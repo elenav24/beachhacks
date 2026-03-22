@@ -32,8 +32,9 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
         _run_sync(wikirate.get_climate_transparency_data, product["brand"]),
     )
 
-    ethics_score = labor["score"] if labor else None
-    ethics_breakdown = labor["breakdown"] if labor else None
+    # labor is a list of (label, score) tuples; last entry is the total
+    ethics_score = labor[-1][1] if labor else None
+    ethics_breakdown = [{"label": l, "score": s} for l, s in labor[:-1]] if labor else None
 
     return EnvironmentalReceipt(
         product_name=product["title"],
