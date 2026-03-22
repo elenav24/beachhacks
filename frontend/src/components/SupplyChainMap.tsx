@@ -25,7 +25,7 @@ export function SupplyChainMap({ stops, arcs }: SupplyChainMapProps) {
   const handleGlobeReady = () => {
     if (!globeEl.current) return;
     globeEl.current.controls().autoRotate = true;
-    globeEl.current.controls().autoRotateSpeed = 0.5;
+    globeEl.current.controls().autoRotateSpeed = 0;
     const dest = stops.find(s => s.type === 'destination') ?? stops[stops.length - 1];
     if (dest) globeEl.current.pointOfView({ lat: dest.lat, lng: dest.lng, altitude: 2.5 }, 1000);
   };
@@ -55,10 +55,10 @@ export function SupplyChainMap({ stops, arcs }: SupplyChainMapProps) {
         }}
         arcsData={arcs}
         arcColor={(d: any) => (d as SupplyChainArc).arcColor}
-        arcDashLength={0.4}
-        arcDashGap={0.2}
-        arcDashAnimateTime={2000}
-        arcStroke={1.5}
+        arcDashLength={0.5}
+        arcDashGap={0.1}
+        arcDashAnimateTime={4000}
+        arcStroke={2}
         arcDashInitialGap={(_: any) => Math.random()}
         arcLabel={(d: any) => {
           const arc = d as SupplyChainArc;
