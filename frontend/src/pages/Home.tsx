@@ -44,17 +44,35 @@ export default function Home() {
   const canSubmit = tab === 'url' ? url.trim().length > 0 : title.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl shadow-2xl p-8">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="bg-emerald-500/20 p-3 rounded-full">
-            <Leaf className="w-8 h-8 text-emerald-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-medium text-white">True Cost Calculator</h1>
-            <p className="text-gray-400">Discover the environmental impact of your products</p>
-          </div>
+    <div className="min-h-screen bg-gray-950 flex">
+      {/* Left panel */}
+      <div className="hidden md:flex flex-col justify-center w-1/2 px-16 py-12 bg-slate-900/60 border-r border-slate-700/40">
+        <div className="bg-emerald-500/20 p-4 rounded-full w-fit mb-6">
+          <Leaf className="w-10 h-10 text-emerald-400" />
         </div>
+        <h1 className="text-5xl font-semibold text-white leading-tight mb-4">True Cost Calculator</h1>
+        <p className="text-gray-400 text-lg leading-relaxed mb-8">
+          Discover the real environmental impact behind the products you buy — from supply chain emissions to material sourcing.
+        </p>
+        <ul className="space-y-3 text-gray-500 text-sm">
+          <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />Analyze Amazon products via URL</li>
+          <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />Enter product details manually</li>
+          <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />Get supply chain & carbon footprint insights</li>
+          <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />See an environmental grade for any product</li>
+        </ul>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex flex-col justify-center w-full md:w-1/2 px-8 md:px-16 py-12">
+        {/* Mobile header */}
+        <div className="flex items-center gap-3 mb-8 md:hidden">
+          <div className="bg-emerald-500/20 p-3 rounded-full">
+            <Leaf className="w-7 h-7 text-emerald-400" />
+          </div>
+          <h1 className="text-2xl font-semibold text-white">True Cost Calculator</h1>
+        </div>
+
+        <h2 className="text-xl font-medium text-white mb-6 hidden md:block">Analyze a product</h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs value={tab} onValueChange={(v) => setTab(v as 'url' | 'manual')}>
