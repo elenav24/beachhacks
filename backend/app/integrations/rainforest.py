@@ -1,8 +1,19 @@
 import httpx
+import re
 from app.core.config import RAINFOREST_API_KEY
 
+_cache: dict = {}
+
+def _extract_asin(url: str) -> str | None:
+    match = re.search(r"/dp/([A-Z0-9]{10})", url)
+    return match.group(1) if match else None
 
 async def get_product_data(amazon_url: str):
+    asin = _extract_asin(amazon_url)
+    if asin and asin in _cache:
+        print(f"RAINFOREST cache hit: {asin}")
+        return _cache[asin]
+
     params = {"api_key": RAINFOREST_API_KEY, "type": "product", "url": amazon_url}
 
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -26,7 +37,7 @@ async def get_product_data(amazon_url: str):
 
         climate_pledge = data.get("climate_pledge_friendly")
 
-        return {
+        result = {
             "title": product.get("title", "Unknown Product"),
             "brand": product.get("brand", "Generic"),
             "price": product.get("buybox_winner", {}).get("price", {}).get("value", 0),
@@ -36,3 +47,8 @@ async def get_product_data(amazon_url: str):
             "asin": product.get("asin"),
             "climate_pledge_friendly": climate_pledge is not None,
         }
+
+        if asin:
+            _cache[asin] = result
+
+        return result
