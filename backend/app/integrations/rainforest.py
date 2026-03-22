@@ -47,6 +47,8 @@ async def get_product_data(amazon_url: str):
             "image_url": product.get("main_image", {}).get("link"),
             "asin": product.get("asin"),
             "climate_pledge_friendly": climate_pledge is not None,
+            "description": product.get("feature_bullets_flat") or "",
+            "materials": product.get("material") or product.get("specifications", [{}]).get("Material Type") or "",
         }
 
         if asin:
