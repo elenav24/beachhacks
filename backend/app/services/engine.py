@@ -16,6 +16,39 @@ async def _run_sync(fn, *args):
         return None
 
 
+def _compute_grade(emissions: float, water: float, ethics_score: float | None, decomposition: int) -> tuple[str, float]:
+    """Return (letter_grade, 0-100 score). Higher score = better."""
+    # Normalize each dimension to 0-100 penalty (lower = better)
+    co2_penalty  = min(100, (emissions / 50) * 100)       # 50 kg CO2 = max penalty
+    water_penalty = min(100, (water / 5000) * 100)         # 5000 L = max penalty
+    ethics_penalty = (100 - (ethics_score or 50))          # invert: low ethics = high penalty
+    decomp_penalty = min(100, (decomposition / 500) * 100) # 500 yrs = max penalty
+
+    overall_penalty = (co2_penalty + water_penalty + ethics_penalty + decomp_penalty) / 4
+    score = round(100 - overall_penalty, 1)
+
+    if overall_penalty < 20:   grade = "A+"
+    elif overall_penalty < 35: grade = "A"
+    elif overall_penalty < 50: grade = "B"
+    elif overall_penalty < 65: grade = "C"
+    elif overall_penalty < 80: grade = "D"
+    else:                      grade = "F"
+
+    return grade, score
+
+
+def _estimate_water(emissions: float, category: str) -> float:
+    """Rough water footprint estimate based on CO2 and category."""
+    category_lower = category.lower()
+    if any(k in category_lower for k in ("shirt", "cloth", "apparel", "cotton", "wear", "fashion")):
+        return round(emissions * 200, 1)   # textiles are water-intensive
+    if any(k in category_lower for k in ("electronic", "phone", "laptop", "computer")):
+        return round(emissions * 20, 1)
+    if any(k in category_lower for k in ("leather", "shoe", "boot")):
+        return round(emissions * 150, 1)
+    return round(emissions * 50, 1)        # generic fallback
+
+
 async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalReceipt:
     # 1. Get product data from Rainforest
     product = await rainforest.get_product_data(amazon_url)
@@ -36,6 +69,11 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
     ethics_score = labor[-1][1] if labor else None
     ethics_breakdown = [{"label": l, "score": s} for l, s in labor[:-1]] if labor else None
 
+    emissions = impact["emissions"]
+    decomposition = impact["decomposition"]
+    water = _estimate_water(emissions, product["category"])
+    grade, overall_score = _compute_grade(emissions, water, ethics_score, decomposition)
+
     return EnvironmentalReceipt(
         product_name=product["title"],
         brand=product["brand"],
@@ -43,18 +81,18 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
         image_url=product.get("image_url"),
         asin=product.get("asin"),
         climate_pledge_friendly=product.get("climate_pledge_friendly", False),
-        emissions=impact["emissions"],
+        emissions=emissions,
         emission_factor_name=impact.get("emission_factor_name"),
         emission_factor_region=impact.get("emission_factor_region"),
         emission_lca_stage=impact.get("emission_lca_stage"),
-        decomposition_time_years=impact["decomposition"],
+        decomposition_time_years=decomposition,
         ethics_score=ethics_score,
         ethics_breakdown=ethics_breakdown,
         climate_decarbonization_score=climate_transparency.get("decarbonization") if climate_transparency else None,
         climate_energy_score=climate_transparency.get("energy") if climate_transparency else None,
         climate_traceability_score=climate_transparency.get("traceability") if climate_transparency else None,
         climate_accountability_score=climate_transparency.get("accountability") if climate_transparency else None,
-        water=0.0,
-        environmental_grade="N/A",
-        overall_score=0.0,
+        water=water,
+        environmental_grade=grade,
+        overall_score=overall_score,
     )

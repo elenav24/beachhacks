@@ -41,17 +41,51 @@ const cityCoordinates: Record<string, { lat: number; lng: number }> = {
   'dubai': { lat: 25.2048, lng: 55.2708 },
   'singapore': { lat: 1.3521, lng: 103.8198 },
   'mumbai': { lat: 19.076, lng: 72.8777 },
+  'fullerton': { lat: 33.8704, lng: -117.9242 },
+  'anaheim': { lat: 33.8366, lng: -117.9143 },
+  'irvine': { lat: 33.6846, lng: -117.8265 },
+  'san diego': { lat: 32.7157, lng: -117.1611 },
+  'phoenix': { lat: 33.4484, lng: -112.074 },
+  'dallas': { lat: 32.7767, lng: -96.797 },
+  'austin': { lat: 30.2672, lng: -97.7431 },
+  'denver': { lat: 39.7392, lng: -104.9903 },
+  'atlanta': { lat: 33.749, lng: -84.388 },
+  'portland': { lat: 45.5152, lng: -122.6784 },
+  'las vegas': { lat: 36.1699, lng: -115.1398 },
+  'san antonio': { lat: 29.4241, lng: -98.4936 },
+  'philadelphia': { lat: 39.9526, lng: -75.1652 },
 };
+
+async function geocodeCity(city: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`
+    );
+    const data = await res.json();
+    const r = data.results?.[0];
+    if (r) return { lat: r.latitude, lng: r.longitude };
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function lookupLocal(raw: string): { lat: number; lng: number } | null {
+  const normalized = raw.toLowerCase().trim();
+  // exact match
+  if (cityCoordinates[normalized]) return cityCoordinates[normalized];
+  // prefix match (handles "Los Angeles, CA" → "los angeles")
+  const entry = Object.entries(cityCoordinates).find(
+    ([k]) => normalized.startsWith(k) || k.startsWith(normalized.split(/[\s,]/)[0])
+  );
+  return entry?.[1] ?? null;
+}
 
 export function mapReceiptToMetrics(receipt: EnvironmentalReceipt): EnvironmentalMetrics {
   const co2 = receipt.emissions;
   const water = receipt.water;
   const degradationTime = receipt.decomposition_time_years;
-
-  // Map ethics score (0-100) to humanCost
   const humanCost = receipt.ethics_score != null ? receipt.ethics_score : 50;
-
-  // Use backend grade and score directly
   const grade = receipt.environmental_grade;
   const gradeScore = receipt.overall_score;
 
@@ -72,12 +106,19 @@ export function mapReceiptToMetrics(receipt: EnvironmentalReceipt): Environmenta
   };
 }
 
-export function generateSupplyChain(receipt: EnvironmentalReceipt): SupplyChainStop[] {
+export async function generateSupplyChain(
+  receipt: EnvironmentalReceipt,
+  deliveryLocation?: string
+): Promise<SupplyChainStop[]> {
   const stops: SupplyChainStop[] = [];
   const name = (receipt.product_name + ' ' + receipt.brand).toLowerCase();
 
-  const isElectronics = name.includes('phone') || name.includes('laptop') || name.includes('electronic') || name.includes('computer');
-  const isTextile = name.includes('shirt') || name.includes('cotton') || name.includes('fabric') || name.includes('clothing');
+  const isElectronics =
+    name.includes('phone') || name.includes('laptop') ||
+    name.includes('electronic') || name.includes('computer');
+  const isTextile =
+    name.includes('shirt') || name.includes('cotton') ||
+    name.includes('fabric') || name.includes('clothing');
 
   if (isTextile) {
     stops.push({ name: 'Cotton Farm - India', lat: 23.0225, lng: 72.5714, type: 'origin' });
@@ -95,8 +136,25 @@ export function generateSupplyChain(receipt: EnvironmentalReceipt): SupplyChainS
 
   stops.push({ name: 'Distribution Center - Los Angeles, USA', lat: 34.0522, lng: -118.2437, type: 'distribution' });
 
-  const destCoords = cityCoordinates['new york'];
-  stops.push({ name: 'Your Location - New York, USA', lat: destCoords.lat, lng: destCoords.lng, type: 'destination' });
+  const raw = (deliveryLocation ?? '').trim();
+  const displayName = raw
+    ? raw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : 'New York';
+
+  // 1. Try local lookup first (instant)
+  let coords = raw ? lookupLocal(raw) : null;
+
+  // 2. Fall back to geocoding API for any city not in our local map
+  if (!coords && raw) {
+    coords = await geocodeCity(raw);
+  }
+
+  // 3. Last resort: New York
+  if (!coords) {
+    coords = cityCoordinates['new york'];
+  }
+
+  stops.push({ name: `Your Location - ${displayName}`, lat: coords.lat, lng: coords.lng, type: 'destination' });
 
   return stops;
 }

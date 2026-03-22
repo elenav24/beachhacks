@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import Globe from 'react-globe.gl';
 import { MapPin, Factory, Warehouse, Home } from 'lucide-react';
 import type { SupplyChainStop } from '../utils/calculations';
@@ -10,21 +10,22 @@ interface SupplyChainMapProps {
 export function SupplyChainMap({ stops }: SupplyChainMapProps) {
   const globeEl = useRef<any>(null);
 
+  const arcColors = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6'];
   const arcs = stops.slice(0, -1).map((stop, i) => ({
     startLat: stop.lat,
     startLng: stop.lng,
     endLat: stops[i + 1].lat,
     endLng: stops[i + 1].lng,
-    color: ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6'][i % 4],
+    arcColor: arcColors[i % arcColors.length],
   }));
 
-  useEffect(() => {
-    if (globeEl.current) {
-      globeEl.current.controls().autoRotate = true;
-      globeEl.current.controls().autoRotateSpeed = 0.5;
-      globeEl.current.pointOfView({ altitude: 2.5 }, 1000);
-    }
-  }, []);
+  const handleGlobeReady = () => {
+    if (!globeEl.current) return;
+    globeEl.current.controls().autoRotate = true;
+    globeEl.current.controls().autoRotateSpeed = 0.5;
+    const dest = stops.find(s => s.type === 'destination') ?? stops[stops.length - 1];
+    globeEl.current.pointOfView({ lat: dest.lat, lng: dest.lng, altitude: 2.5 }, 1000);
+  };
 
   const getStopIcon = (type: string) => {
     switch (type) {
@@ -51,11 +52,12 @@ export function SupplyChainMap({ stops }: SupplyChainMapProps) {
       <div className="relative bg-gray-900 rounded-lg overflow-hidden" style={{ height: '500px' }}>
         <Globe
           ref={globeEl}
+          onGlobeReady={handleGlobeReady}
           globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
           backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
           pointsData={stops}
-          pointAltitude={0.01}
-          pointRadius={0.5}
+          pointAltitude={0.02}
+          pointRadius={0.8}
           pointColor={(d: any) => {
             const stop = d as SupplyChainStop;
             if (stop.type === 'origin') return '#10b981';
@@ -68,11 +70,11 @@ export function SupplyChainMap({ stops }: SupplyChainMapProps) {
             return `<div style="background:rgba(0,0,0,0.8);padding:8px;border-radius:4px;color:white"><strong>${stop.name}</strong><br/><span style="font-size:12px">${stop.type.toUpperCase()}</span></div>`;
           }}
           arcsData={arcs}
-          arcColor="color"
+          arcColor={(d: any) => d.arcColor}
           arcDashLength={0.4}
           arcDashGap={0.2}
           arcDashAnimateTime={2000}
-          arcStroke={0.5}
+          arcStroke={1}
           arcDashInitialGap={(_: any) => Math.random()}
         />
       </div>

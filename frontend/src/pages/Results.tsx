@@ -7,11 +7,13 @@ import { EnvironmentalGrade } from '../components/EnvironmentalGrade';
 import { BreakdownReceipt } from '../components/BreakdownReceipt';
 import { SupplyChainMap } from '../components/SupplyChainMap';
 import { useReceipt } from '../hooks/useReceipt';
-import { mapReceiptToMetrics, generateSupplyChain } from '../utils/calculations';
+import { mapReceiptToMetrics, generateSupplyChain, type SupplyChainStop } from '../utils/calculations';
 
 export default function Results() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
+  const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [supplyChain, setSupplyChain] = useState<SupplyChainStop[]>([]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('receiptUrl');
@@ -19,10 +21,17 @@ export default function Results() {
       navigate('/');
     } else {
       setUrl(stored);
+      setDeliveryLocation(sessionStorage.getItem('deliveryLocation') ?? '');
     }
   }, [navigate]);
 
   const { data: receipt, isLoading, isError, error } = useReceipt(url);
+
+  // Resolve supply chain (async geocoding) once receipt + location are ready
+  useEffect(() => {
+    if (!receipt) return;
+    generateSupplyChain(receipt, deliveryLocation).then(setSupplyChain);
+  }, [receipt, deliveryLocation]);
 
   if (!url || isLoading) {
     return (
@@ -52,7 +61,6 @@ export default function Results() {
   if (!receipt) return null;
 
   const metrics = mapReceiptToMetrics(receipt);
-  const supplyChain = generateSupplyChain(receipt);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
