@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+    font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    background: var(--color-base);
+    min-height: 100vh;
+    /* overflow: hidden; */
+}
+
+html, body, #root {
+    /* font-family: 'Rubik', sans-serif; */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+@theme {
+    --color-primary: #009966;
+    --color-secondary: #DCFCF3;
+    --color-base: #f8f8f8;
+    --color-base-2: #101828;
+  }
+  
