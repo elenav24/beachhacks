@@ -1,25 +1,40 @@
-from app.integrations import rainforest, climateiq  # , wikirate, cohere_ai
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from app.integrations import rainforest, climateiq, wikirate
 from app.models.receipt import EnvironmentalReceipt
 
+_executor = ThreadPoolExecutor()
+
+
+async def _run_sync(fn, *args):
+    """Run a blocking (sync) function in a thread pool, returning None on failure."""
+    loop = asyncio.get_event_loop()
+    try:
+        return await loop.run_in_executor(_executor, fn, *args)
+    except Exception as e:
+        print(f"WIKIRATE ERROR ({fn.__name__}):", e)
+        return None
+
+
 async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalReceipt:
-    # 1. Identity: Get product weight and category
+    # 1. Get product data from Rainforest
     product = await rainforest.get_product_data(amazon_url)
-    
-    # 2. Ethical: Check WikiRate for brand transparency
-    # ethics = await wikirate.get_brand_transparency(product["brand"])
-    
-    # 3. Research: Use Cohere + Tavily if data is missing or for supply chain stops
-    # ai_research = await cohere_ai.research_supply_chain(product["brand"], product["title"])
-    
-    # 4. Math: Send weight + material + AI-found location to Climatiq
     print("PRODUCT CATEGORY:", product["category"], "WEIGHT:", product["weight"])
-    impact = await climateiq.calculate_footprint(
-        weight=product["weight"],
-        category=product["category"],
-        title=product["title"],
-        # origin=ai_research.predicted_origin
+
+    # 2. Run Climatiq + WikiRate in parallel (wikirate is sync so runs in thread pool)
+    impact, labor, climate_transparency = await asyncio.gather(
+        climateiq.calculate_footprint(
+            weight=product["weight"],
+            category=product["category"],
+            title=product["title"],
+        ),
+        _run_sync(wikirate.get_labor_score, "Amazon"),
+        _run_sync(wikirate.get_climate_transparency_data, product["brand"]),
     )
-    
+
+    ethics_score = labor["score"] if labor else None
+    ethics_breakdown = labor["breakdown"] if labor else None
+
     return EnvironmentalReceipt(
         product_name=product["title"],
         brand=product["brand"],
@@ -31,9 +46,14 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
         emission_factor_name=impact.get("emission_factor_name"),
         emission_factor_region=impact.get("emission_factor_region"),
         emission_lca_stage=impact.get("emission_lca_stage"),
+        decomposition_time_years=impact["decomposition"],
+        ethics_score=ethics_score,
+        ethics_breakdown=ethics_breakdown,
+        climate_decarbonization_score=climate_transparency.get("decarbonization") if climate_transparency else None,
+        climate_energy_score=climate_transparency.get("energy") if climate_transparency else None,
+        climate_traceability_score=climate_transparency.get("traceability") if climate_transparency else None,
+        climate_accountability_score=climate_transparency.get("accountability") if climate_transparency else None,
         water=0.0,
-        ethics=0.0,
         environmental_grade="N/A",
         overall_score=0.0,
-        decomposition_time_years=impact["decomposition"]
     )
