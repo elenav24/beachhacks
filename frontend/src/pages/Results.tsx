@@ -5,33 +5,45 @@ import { Button } from '../components/ui/button';
 import { EnvironmentalGrade } from '../components/EnvironmentalGrade';
 import { BreakdownReceipt } from '../components/BreakdownReceipt';
 import { SupplyChainMap } from '../components/SupplyChainMap';
-import { useReceipt } from '../hooks/useReceipt';
+import { useReceipt, useManualReceipt, type ManualProduct } from '../hooks/useReceipt';
 import { mapReceiptToMetrics, generateSupplyChain, type SupplyChainStop } from '../utils/calculations';
 
 export default function Results() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
+  const [manualProduct, setManualProduct] = useState<ManualProduct | null>(null);
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [supplyChain, setSupplyChain] = useState<SupplyChainStop[]>([]);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('receiptUrl');
-    if (!stored) {
+    const storedUrl = sessionStorage.getItem('receiptUrl');
+    const storedManual = sessionStorage.getItem('manualProduct');
+
+    if (!storedUrl && !storedManual) {
       navigate('/');
-    } else {
-      setUrl(stored);
-      setDeliveryLocation(sessionStorage.getItem('deliveryLocation') ?? '');
+      return;
+    }
+
+    setDeliveryLocation(sessionStorage.getItem('deliveryLocation') ?? '');
+
+    if (storedUrl) {
+      setUrl(storedUrl);
+    } else if (storedManual) {
+      setManualProduct(JSON.parse(storedManual) as ManualProduct);
     }
   }, [navigate]);
 
-  const { data: receipt, isLoading, isError, error } = useReceipt(url);
+  const urlQuery = useReceipt(url);
+  const manualQuery = useManualReceipt(manualProduct);
+
+  const { data: receipt, isLoading, isError, error } = url ? urlQuery : manualQuery;
 
   useEffect(() => {
     if (!receipt) return;
     generateSupplyChain(receipt, deliveryLocation).then(setSupplyChain);
   }, [receipt, deliveryLocation]);
 
-  if (!url || isLoading) {
+  if ((!url && !manualProduct) || isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center space-y-4">
