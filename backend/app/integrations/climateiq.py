@@ -1,42 +1,8 @@
 import httpx
 from app.core.config import CLIMATIQ_API_KEY
+from app.integrations.category_fallbacks import get_fallback_activity_id, DEFAULT_ACTIVITY_ID
 
 BASE_URL = "https://api.climatiq.io/data/v1"
-
-# Fallback map: keywords in category -> known Climatiq weight-based activity IDs
-CATEGORY_FALLBACKS = {
-    "shirt": "consumer_goods-type_cotton_t_shirt",
-    "t-shirt": "consumer_goods-type_cotton_t_shirt",
-    "tee": "consumer_goods-type_cotton_t_shirt",
-    "cloth": "consumer_goods-type_cotton_t_shirt",
-    "apparel": "consumer_goods-type_cotton_t_shirt",
-    "sweater": "consumer_goods-type_cotton_t_shirt",
-    "hoodie": "consumer_goods-type_cotton_t_shirt",
-    "jacket": "consumer_goods-type_cotton_t_shirt",
-    "pants": "consumer_goods-type_cotton_t_shirt",
-    "jeans": "consumer_goods-type_cotton_t_shirt",
-    "dress": "consumer_goods-type_cotton_t_shirt",
-    "skirt": "consumer_goods-type_cotton_t_shirt",
-    "women": "consumer_goods-type_cotton_t_shirt",
-    "men": "consumer_goods-type_cotton_t_shirt",
-    "unisex": "consumer_goods-type_cotton_t_shirt",
-    "shoe": "consumer_goods-type_cotton_t_shirt",
-    "sneaker": "consumer_goods-type_cotton_t_shirt",
-    "boot": "consumer_goods-type_cotton_t_shirt",
-    "electronic": "consumer_goods-type_electrical_equipment",
-    "plastic": "consumer_goods-type_plastic_products",
-    "paper": "consumer_goods-type_paper_products",
-    "metal": "consumer_goods-type_metal_products",
-    "furniture": "consumer_goods-type_furniture",
-    "toy": "consumer_goods-type_toys",
-}
-
-def get_fallback_activity_id(category: str, title: str = "") -> str | None:
-    text = (category + " " + title).lower()
-    for keyword, activity_id in CATEGORY_FALLBACKS.items():
-        if keyword in text:
-            return activity_id
-    return None
 
 async def calculate_footprint(weight: str, category: str, title: str = "", origin: str = "CN"):
     # Clean and normalize weight to kg
@@ -72,13 +38,8 @@ async def calculate_footprint(weight: str, category: str, title: str = "", origi
 
         print("CLIMATIQ activity_id:", activity_id)
 
-        if not activity_id:
-            return {"emissions": 0.0, "water": 0.0, "decomposition": 1}
-
         # 2. Estimate: calculate CO2e using the matched activity_id + weight
-        # Try the matched ID, fall back to cotton t-shirt if the factor isn't in the free dataset
-        LAST_RESORT = "consumer_goods-type_cotton_t_shirt"
-        for attempt_id in ([activity_id] if activity_id != LAST_RESORT else []) + [LAST_RESORT]:
+        for attempt_id in ([activity_id] if activity_id != DEFAULT_ACTIVITY_ID else []) + [DEFAULT_ACTIVITY_ID]:
             estimate_resp = await client.post(
                 f"{BASE_URL}/estimate",
                 json={
