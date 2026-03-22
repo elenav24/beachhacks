@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { EnvironmentalGrade } from '../components/EnvironmentalGrade';
 import { BreakdownReceipt } from '../components/BreakdownReceipt';
 import { SupplyChainBreakdown } from '../components/SupplyChainBreakdown';
 import { SupplyChainMap } from '../components/SupplyChainMap';
@@ -15,8 +14,6 @@ import {
   type SupplyChainArc,
 } from '../utils/calculations';
 
-type RightTab = 'receipt' | 'supply';
-
 export default function Results() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
@@ -24,8 +21,6 @@ export default function Results() {
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [supplyChain, setSupplyChain] = useState<SupplyChainStop[]>([]);
   const [arcs, setArcs] = useState<SupplyChainArc[]>([]);
-  const [rightTab, setRightTab] = useState<RightTab>('receipt');
-
   useEffect(() => {
     const storedUrl = sessionStorage.getItem('receiptUrl');
     const storedManual = sessionStorage.getItem('manualProduct');
@@ -88,11 +83,13 @@ export default function Results() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-gray-950 relative">
-      {/* Fullscreen Globe */}
-      <SupplyChainMap stops={supplyChain} arcs={arcs} />
+
+      <div className="absolute inset-0 -translate-x-67">
+        <SupplyChainMap stops={supplyChain} arcs={arcs} />
+      </div>
 
       {/* Back button */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 -translate-y-2">
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
@@ -103,46 +100,19 @@ export default function Results() {
         </Button>
       </div>
 
-      {/* Left card — Environmental Grade */}
-      <aside className="absolute left-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 overflow-y-auto bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl p-5 shadow-2xl">
-        <EnvironmentalGrade metrics={metrics} />
-      </aside>
-
-      {/* Right card — tabbed */}
-      <aside className="absolute right-6 top-1/2 -translate-y-1/2 w-72 max-h-[80vh] z-10 flex flex-col bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-white/10 shrink-0">
-          <button
-            onClick={() => setRightTab('receipt')}
-            className={`flex-1 py-2.5 text-xs tracking-wider font-mono transition-colors ${
-              rightTab === 'receipt'
-                ? 'text-white border-b-2 border-emerald-400 bg-white/5'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            RECEIPT
-          </button>
-          <button
-            onClick={() => setRightTab('supply')}
-            className={`flex-1 py-2.5 text-xs tracking-wider font-mono transition-colors ${
-              rightTab === 'supply'
-                ? 'text-white border-b-2 border-blue-400 bg-white/5'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            SUPPLY CHAIN
-          </button>
-        </div>
-
-        {/* Tab content */}
+        {/* Right sidebar — Breakdown Receipt */}
+      <aside className="absolute right-12 top-[47%] -translate-y-1/2 w-122 max-h-[80vh] z-10 flex flex-col bg-slate-800/75 backdrop-blur-md border border-slate-600/40 rounded-2xl shadow-2xl overflow-hidden">
         <div className="overflow-y-auto p-5">
-          {rightTab === 'receipt' ? (
-            <BreakdownReceipt metrics={metrics} receipt={receipt} />
-          ) : (
-            <SupplyChainBreakdown stops={supplyChain} arcs={arcs} />
-          )}
+          <BreakdownReceipt metrics={metrics} receipt={receipt} />
         </div>
       </aside>
+
+      {/* Bottom bar — Supply Chain Breakdown */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 bg-slate-900/80 backdrop-blur-md border-t border-slate-600/40 shadow-2xl">
+        <div className="overflow-x-auto">
+          <SupplyChainBreakdown stops={supplyChain} arcs={arcs} />
+        </div>
+      </div>
     </div>
   );
 }

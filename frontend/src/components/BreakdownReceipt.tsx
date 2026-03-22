@@ -74,7 +74,7 @@ export function BreakdownReceipt({ metrics, receipt }: BreakdownReceiptProps) {
         <div className="ml-6">
           <div className="flex justify-between">
             <span className="text-gray-400">Total Consumed:</span>
-            <span className="text-base text-white">{metrics.water.toLocaleString()} L</span>
+            <span className="text-white">{metrics.water.toLocaleString()} L</span>
           </div>
           <p className="text-gray-500 text-xs mt-1">≈ {Math.round(metrics.water / 8)} days of drinking water</p>
         </div>
@@ -117,7 +117,7 @@ export function BreakdownReceipt({ metrics, receipt }: BreakdownReceiptProps) {
         </div>
         <div className="flex justify-between items-center mt-1">
           <span className="text-gray-500 text-xs">Overall Score:</span>
-          <span className="text-gray-300 text-sm">{metrics.gradeScore}/100</span>
+          <span className="text-gray-300 text-lg">{metrics.gradeScore}/100</span>
         </div>
       </div>
     </div>
