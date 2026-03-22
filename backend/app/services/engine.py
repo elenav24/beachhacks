@@ -1,6 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from app.integrations import rainforest, climateiq, wikirate
+from app.integrations.geocoding import geocode_location
 from app.models.receipt import EnvironmentalReceipt
 
 _executor = ThreadPoolExecutor()
@@ -84,6 +85,12 @@ async def generate_manual_analysis(
     water = _estimate_water(emissions, category)
     grade, overall_score = _compute_grade(emissions, water, ethics_score, decomposition)
 
+    # Geocode the emission factor region to get origin coordinates
+    region = impact.get("emission_factor_region")
+    origin_coords = await _run_sync(geocode_location, region) if region else None
+    origin_lat = origin_coords[0] if origin_coords else None
+    origin_lng = origin_coords[1] if origin_coords else None
+
     return EnvironmentalReceipt(
         product_name=title,
         brand=brand,
@@ -91,9 +98,11 @@ async def generate_manual_analysis(
         climate_pledge_friendly=False,
         emissions=emissions,
         emission_factor_name=impact.get("emission_factor_name"),
-        emission_factor_region=impact.get("emission_factor_region"),
+        emission_factor_region=region,
         emission_lca_stage=impact.get("emission_lca_stage"),
         decomposition_time_years=decomposition,
+        origin_lat=origin_lat,
+        origin_lng=origin_lng,
         ethics_score=ethics_score,
         ethics_breakdown=ethics_breakdown,
         climate_decarbonization_score=climate_transparency.get("decarbonization") if climate_transparency else None,
@@ -131,6 +140,12 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
     water = _estimate_water(emissions, product["category"])
     grade, overall_score = _compute_grade(emissions, water, ethics_score, decomposition)
 
+    # Geocode the emission factor region to get origin coordinates
+    region = impact.get("emission_factor_region")
+    origin_coords = await _run_sync(geocode_location, region) if region else None
+    origin_lat = origin_coords[0] if origin_coords else None
+    origin_lng = origin_coords[1] if origin_coords else None
+
     return EnvironmentalReceipt(
         product_name=product["title"],
         brand=product["brand"],
@@ -140,9 +155,11 @@ async def generate_environmental_analysis(amazon_url: str) -> EnvironmentalRecei
         climate_pledge_friendly=product.get("climate_pledge_friendly", False),
         emissions=emissions,
         emission_factor_name=impact.get("emission_factor_name"),
-        emission_factor_region=impact.get("emission_factor_region"),
+        emission_factor_region=region,
         emission_lca_stage=impact.get("emission_lca_stage"),
         decomposition_time_years=decomposition,
+        origin_lat=origin_lat,
+        origin_lng=origin_lng,
         ethics_score=ethics_score,
         ethics_breakdown=ethics_breakdown,
         climate_decarbonization_score=climate_transparency.get("decarbonization") if climate_transparency else None,

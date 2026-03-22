@@ -83,6 +83,7 @@ typing_extensions==4.15.0
 urllib3==2.6.3
 uuid_utils==0.14.1
 uvicorn==0.40.0
+geopy==2.4.1
 wikirate4py==2.0.6
 xxhash==3.6.0
 yarl==1.23.0

@@ -13,6 +13,10 @@ export interface EnvironmentalReceipt {
   emission_lca_stage?: string;
   decomposition_time_years: number;
 
+  // Geocoded origin coordinates
+  origin_lat?: number;
+  origin_lng?: number;
+
   // WikiRate labor ethics
   ethics_score?: number;
   ethics_breakdown?: unknown[];

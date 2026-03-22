@@ -134,7 +134,11 @@ export async function generateSupplyChain(
     name.includes('shirt') || name.includes('cotton') ||
     name.includes('fabric') || name.includes('clothing');
 
-  if (isTextile) {
+  // Use geocoded origin from backend if available, otherwise fall back to category heuristics
+  if (receipt.origin_lat != null && receipt.origin_lng != null) {
+    const regionLabel = receipt.emission_factor_region ?? 'Unknown';
+    stops.push({ name: `Raw Materials - ${regionLabel}`, lat: receipt.origin_lat, lng: receipt.origin_lng, type: 'origin' });
+  } else if (isTextile) {
     stops.push({ name: 'Cotton Farm - India', lat: 23.0225, lng: 72.5714, type: 'origin' });
   } else if (isElectronics) {
     stops.push({ name: 'Raw Materials - DRC', lat: -4.0383, lng: 21.7587, type: 'origin' });

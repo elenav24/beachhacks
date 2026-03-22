@@ -16,6 +16,10 @@ class EnvironmentalReceipt(BaseModel):
     emission_lca_stage: Optional[str] = None
     decomposition_time_years: int
 
+    # Geocoded origin coordinates (from emission_factor_region via geopy)
+    origin_lat: Optional[float] = None
+    origin_lng: Optional[float] = None
+
     # WikiRate labor ethics
     ethics_score: Optional[float] = None
     ethics_breakdown: Optional[list] = None
