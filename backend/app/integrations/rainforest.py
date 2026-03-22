@@ -10,9 +10,9 @@ def _extract_asin(url: str) -> str | None:
 
 async def get_product_data(amazon_url: str):
     asin = _extract_asin(amazon_url)
-    if asin and asin in _cache:
-        print(f"RAINFOREST cache hit: {asin}")
-        return _cache[asin]
+    # if asin and asin in _cache:
+    #     print(f"RAINFOREST cache hit: {asin}")
+    #     return _cache[asin]
 
     params = {"api_key": RAINFOREST_API_KEY, "type": "product", "url": amazon_url}
 
@@ -22,6 +22,10 @@ async def get_product_data(amazon_url: str):
         )
         data = response.json()
 
+        print(f"RAINFOREST STATUS: {response.status_code}")
+        print(f"RAINFOREST KEYS: {list(data.keys())}")
+        if "request_info" in data:
+            print(f"RAINFOREST REQUEST_INFO: {data['request_info']}")
         product = data.get("product", {})
 
         specs = product.get("specifications", [])
@@ -52,7 +56,8 @@ async def get_product_data(amazon_url: str):
             "materials": product.get("material") or (material_info["value"] if material_info else "") or "",
         }
 
-        if asin:
+        # Only cache if we got a real product title
+        if asin and result["title"] != "Unknown Product":
             _cache[asin] = result
 
         return result
