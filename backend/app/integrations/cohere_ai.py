@@ -4,7 +4,6 @@ import os
 
 co = cohere.ClientV2(api_key=os.getenv("COHERE_API_KEY"))
 
-# 1. Define the schema once outside the function
 SUPPLY_CHAIN_SCHEMA = {
     "type": "object",
     "properties": {
@@ -26,13 +25,8 @@ SUPPLY_CHAIN_SCHEMA = {
 }
 
 def get_supply_chain_map(company_name, delivery_city):
-    """
-    Fetches the supply chain journey as a raw JSON object for receipt formatting.
-    """
-    # 2. Format the user input dynamically
     user_input = f"Imagine the user ordered a product from '{company_name}' and it will be delivered to {delivery_city}. Map the 2026 supply chain for this order."
-    
-    # 3. Direct Chat call with strict formatting
+
     res = co.chat(
         model="command-a-03-2025",
         messages=[{"role": "assistant", "content": user_input}],
@@ -42,10 +36,5 @@ def get_supply_chain_map(company_name, delivery_city):
         },
         temperature=0
     )
-    
-    # 4. Return as a Python Dictionary (parsed from the raw text)
-    return json.loads(res.message.content[0].text)
 
-# --- Example Usage ---
-# receipt_data = get_supply_chain_map("H&M", "Torrance, CA")
-# print(f"Distance: {receipt_data['totals']['distance_km']} km")
+    return json.loads(res.message.content[0].text)
