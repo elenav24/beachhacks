@@ -124,63 +124,7 @@ def get_climate_score(company_name):
     
     return result
 
-def get_climate_transparency_data(company_name: str) -> dict | None:
-    """
-    Returns a dict with Fashion Revolution sub-scores:
-      decarbonization, energy, traceability, accountability (each 0-100).
-    Returns None if the company is not found.
-    """
-    companies = wiki_client.get_companies(name=company_name)
-    if not companies:
-        return None
-
-    company_id = companies[0].id
-
-    metrics = [
-        {
-            "key": "decarbonization",
-            "designer": "Fashion Revolution",
-            "name": "Decarbonisation",
-        },
-        {
-            "key": "energy",
-            "designer": "Fashion Revolution",
-            "name": "Energy",
-        },
-        {
-            "key": "traceability",
-            "designer": "Fashion Revolution",
-            "name": "Traceability",
-        },
-        {
-            "key": "accountability",
-            "designer": "Fashion Revolution",
-            "name": "Governance & Accountability",
-        },
-    ]
-
-    result: dict = {}
-    for m in metrics:
-        answers = wiki_client.get_answers(
-            company=company_id,
-            metric_designer=m["designer"],
-            metric_name=m["name"],
-        )
-        val = 0.0
-        if answers:
-            latest = sorted(answers, key=lambda x: x.year, reverse=True)[0]
-            try:
-                raw = float(str(latest.value).replace("%", "").strip())
-                # Normalize: if value looks like it's on a 0-10 scale, multiply by 10
-                val = raw * 10 if raw <= 10 else raw
-            except (ValueError, TypeError):
-                val = 0.0
-        result[m["key"]] = round(val, 1)
-
-    return result
-
-
-def get_sustainability_report(company_name):
+def get_wikirate_report(company_name):
     """
     Returns a combined Labor and Climate score with transparency warnings.
     """
@@ -192,13 +136,14 @@ def get_sustainability_report(company_name):
     
     # 1. LABOR SECTION
     labor_data = get_labor_score(company_name)
+    labor_score = labor_data[-1][1] if labor_data else None
     if labor_data:
         # Check for transparency warning (usually the first item in our list)
         transparency_score = next((item[1] for item in labor_data if "Transparency" in item[0]), 100)
         if transparency_score == 0:
             final_report["warnings"].append("ALERT: This brand provides ZERO supply chain transparency.")
         
-        final_report["scores"].append({"category": "Labor Ethics", "data": labor_data})
+        final_report["scores"].append({"Labor Ethics": labor_score})
 
     # 2. CLIMATE SECTION
     climate_data = get_climate_score(company_name)
