@@ -89,7 +89,7 @@ export default function Results() {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <img src="/loading.gif" alt="Loading..." className="mx-auto w-48 h-48 object-contain" />
           <p className="text-gray-400">Analyzing environmental impact...</p>
         </div>
       </div>

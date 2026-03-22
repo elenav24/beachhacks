@@ -95,7 +95,7 @@ export default function Home() {
                             <Label htmlFor="url" className="text-gray-300">Amazon Product URL *</Label>
                             <Input
                                 id="url"
-                                required={true}
+                                required
                                 type="url"
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
@@ -108,10 +108,10 @@ export default function Home() {
                         <TabsContent value="manual" className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="brand" className="text-gray-300">Brand / Company</Label>
+                                    <Label htmlFor="brand" className="text-gray-300">Brand / Company *</Label>
                                     <Input
                                         id="brand"
-                                        required={true}
+                                        required
                                         value={brand}
                                         onChange={(e) => setBrand(e.target.value)}
                                         placeholder="e.g., Nike, Patagonia"
@@ -119,11 +119,11 @@ export default function Home() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="price" className="text-gray-300">Price (USD)</Label>
+                                    <Label htmlFor="price" className="text-gray-300">Price (USD) *</Label>
                                     <Input
                                         id="price"
                                         type="number"
-                                        required={true}
+                                        required
                                         min="0"
                                         step="0.01"
                                         value={price}
@@ -138,7 +138,7 @@ export default function Home() {
                                 <Label htmlFor="title" className="text-gray-300">Product Title *</Label>
                                 <Input
                                     id="title"
-                                    required={true}
+                                    required
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="e.g., Men's Slim Fit Cotton T-Shirt"
@@ -147,9 +147,10 @@ export default function Home() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description" className="text-gray-300">Product Description</Label>
+                                <Label htmlFor="description" className="text-gray-300">Product Description *</Label>
                                 <Textarea
                                     id="description"
+                                    required
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Describe the product, its use case, manufacturing details..."
